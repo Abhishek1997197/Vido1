@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vido - Watch Now</title>
+<style>
+body {
+  margin:0;
+  font-family:Arial,sans-serif;
+  background-color:#0f0f0f;
+  color:#fff;
+  transition: background 0.3s,color 0.3s;
+}
+body.light {background-color:#f9f9f9;color:#000;}
+header {
+  background:#202020;
+  color:#fff;
+  padding:15px 25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  position:sticky;
+  top:0;
+  z-index:100;
+  font-weight:bold;
+  font-size:1.5em;
+}
+header.light {background:#fff;color:#000;}
+.menu-btn, .theme-toggle {
+  background:none;
+  border:none;
+  color:inherit;
+  font-size:1.2em;
+  cursor:pointer;
+  margin-left:10px;
+}
+.menu-dropdown {
+  display:none;
+  position:absolute;
+  top:60px;
+  right:25px;
+  background:#eee;
+  color:#000;
+  border-radius:5px;
+  flex-direction:column;
+  padding:5px 0;
+  z-index:200;
+}
+.menu-dropdown button {
+  background:none;
+  border:none;
+  width:100%;
+  padding:8px 15px;
+  text-align:left;
+  cursor:pointer;
+}
+.menu-dropdown button:hover {background:#ccc;}
+.video-grid {
+  display:grid;
+grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+  gap:15px;
+  padding:15px;
+}
+.video-card {
+  background:#181818;
+  border-radius:10px;
+  overflow:hidden;
+  transition:transform 0.2s;
+  cursor:pointer;
+  position:relative;
+}
+.video-card:hover {transform:scale(1.03);}
+.video-card img {width:100%;aspect-ratio:16/9;object-fit:cover;}
+.video-info {
+  padding:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.video-info h3 {margin:0;font-size:1em;}
+.share-icon {font-size:1.2em; cursor:pointer; color:#ff0000;}
+.nav-btns {display:flex; justify-content:center; gap:10px; margin-bottom:20px;}
+.nav-btns button {
+  background:#ff0000; color:#fff; border:none; padding:10px 20px; border-radius:20px; cursor:pointer;
+}
+.nav-btns button:hover {background:#e60000;}
+.about-section {
+  text-align:center;
+  padding:20px;
+  background:#1a1a1a;
+  border-top:1px solid #333;
+}
+body.light .about-section {background:#eee;color:#000;border-top:1px solid #ccc;}
+.player-modal {
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.95);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:200;
+  display:none;
+}
+.player-modal.active {display:flex;}
+.player-content {
+  position:relative;
+  width:95%;
+  max-width:900px;
+  background:#000;
+  border-radius:10px;
+  overflow:hidden;
+}
+.close-btn {
+  position:absolute;
+  top:10px; right:15px;
+  font-size:22px;
+  background:#222;
+  color:#fff;
+  border:none;
+  border-radius:50%;
+  width:35px; height:35px;
+  cursor:pointer;
+}
+.close-btn:hover {background:#444;}
+iframe {width:100%; height:500px; border:none;}
+@media(max-width:768px){
+  .video-grid {grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+  iframe {height:300px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="cursor:pointer;" onclick="goHome()">Vido</div>
+  <div>
+    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+    <button class="menu-btn" onclick="toggleMenu()">☰</button>
+    <div class="menu-dropdown" id="menuDropdown">
+      <button onclick="goHome()">Home</button>
+      <button onclick="shareSite()">Share Site</button>
+    </div>
+  </div>
+</header>
+<div class="video-grid" id="videoGrid"></div>
+
+<div class="nav-btns">
+  <button id="prevBtn">Previous</button>
+  <button id="nextBtn">Next</button>
+</div>
+
+<div class="about-section">
+  <h3>About Vido</h3>
+  <p>Vido brings you a smooth and modern experience to explore trending YouTube videos in one place. Watch, share, and enjoy seamlessly on mobile and desktop.</p>
+</div>
+
+<div class="player-modal" id="playerModal">
+  <div class="player-content">
+    <button class="close-btn" id="closeBtn">×</button>
+    <iframe id="videoPlayer" allowfullscreen></iframe>
+  </div>
+</div>
+<script>
+const videos = [
+  {title:"La Jary Video De",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Maria Julissa Video",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Karely Ruiz Video",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Valentina Ricarda vídeo de",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Alana Flores Video De",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"ABIGAIL LALAMA VIDEO DE",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 7",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 8",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 9",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 11",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 12",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 13",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 14",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 15",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 16",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 17",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 18",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 19",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"},
+  {title:"Video 10",link:"https://youtu.be/rlMtaSs7wfs",thumb:"https://img.youtube.com/vi/rlMtaSs7wfs/hqdefault.jpg"}
+];
+const adLink="https://www.effectivegatecpm.com/enqefbgj85?key=0de1cfd8325a0051d8af7a4a1d103d3b";
+let currentPage=1;
+const videosPerPage=10
+
+function loadVideos(){
+  const grid=document.getElementById("videoGrid");
+  grid.innerHTML="";
+  const start=(currentPage-1)*videosPerPage;
+  const end=start+videosPerPage;
+  videos.slice(start,end).forEach(v=>{
+    const card=document.createElement("div");
+    card.className="video-card";
+    card.innerHTML=`
+      <img src="${v.thumb}" alt="${v.title}">
+      <div class="video-info">
+        <h3>${v.title}</h3>
+        <span class="share-icon" onclick="shareVideo('${v.link}',event)">🔗</span>
+      </div>
+    `;
+    card.onclick=()=>openPlayer(v.link);
+    grid.appendChild(card);
+  });
+}
+function openPlayer(link){
+  // Open Adsterra ad in a new tab
+  window.open(adLink,"_blank");
+
+  const modal=document.getElementById("playerModal");
+  const player=document.getElementById("videoPlayer");
+  const videoId=link.split("v=")[1]?.split("&")[0]||link.split("/").pop();
+  player.src=`https://www.youtube.com/embed/${videoId}?autoplay=1`;
+  modal.classList.add("active");
+
+  history.pushState({video:true,link:link},"", "?v="+videoId);
+}
+document.getElementById("closeBtn").onclick=()=>{
+  const modal=document.getElementById("playerModal");
+  const player=document.getElementById("videoPlayer");
+  player.src="";
+  modal.classList.remove("active");
+  history.pushState({home:true},"","");
+}
+document.getElementById("closeBtn").onclick=()=>{
+  const modal=document.getElementById("playerModal");
+  const player=document.getElementById("videoPlayer");
+  player.src="";
+  modal.classList.remove("active");
+  history.pushState({home:true},"","");
+}
+document.getElementById("nextBtn").onclick=()=>{
+  currentPage++;
+  const totalPages=Math.ceil(videos.length/videosPerPage);
+  if(currentPage>totalPages) currentPage=1;
+  loadVideos();
+  window.scrollTo(0,0);
+}
+document.getElementById("prevBtn").onclick=()=>{
+  currentPage--;
+  const totalPages=Math.ceil(videos.length/videosPerPage);
+  if(currentPage<1) currentPage=totalPages;
+  loadVideos();
+  window.scrollTo(0,0);
+}
+
+function toggleTheme(){
+  document.body.classList.toggle("light");
+  localStorage.setItem("theme",document.body.classList.contains("light")?"light":"dark");
+}
+
+function toggleMenu(){
+  const d=document.getElementById("menuDropdown");
+  d.style.display=(d.style.display==="flex")?"none":"flex";
+  d.style.flexDirection="column";
+}
+function goHome(){
+  currentPage=1;
+  loadVideos();
+  const modal=document.getElementById("playerModal");
+  const player=document.getElementById("videoPlayer");
+  player.src="";
+  modal.classList.remove("active");
+  history.pushState({home:true},"","");
+}
+
+function shareSite(){
+  if(navigator.share){
+    navigator.share({title:"Vido",text:"Check this site",url:window.location.href});
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    alert("Link copied to clipboard!");
+  }
+}
+function shareVideo(link,event){
+  event.stopPropagation();
+  if(navigator.share){
+    navigator.share({title:"Vido Video",url:link});
+  } else {
+    navigator.clipboard.writeText(link);
+    alert("Video link copied!");
+  }
+}
+
+// Handle browser back button
+window.onpopstate=function(event){
+  if(event.state && event.state.video){
+    openPlayer(event.state.link);
+  } else {
+    goHome();
+  }
+}
+
+// Load theme
+window.addEventListener("load",()=>{
+  if(localStorage.getItem("theme")==="light") document.body.classList.add("light");
+  loadVideos();
+});
+</script>
+</body>
+</html>
